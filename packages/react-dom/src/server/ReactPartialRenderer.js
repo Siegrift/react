@@ -273,6 +273,9 @@ function getNonChildrenInnerMarkup(props) {
   const innerHTML = props.dangerouslySetInnerHTML;
   if (innerHTML != null) {
     if (innerHTML.__html != null) {
+      if (innerHTML.__html.constructor.name !== 'TrustedHTML') {
+        throw new Error("Encountered untrusted html: " + innerHTML.__html)
+      }
       return innerHTML.__html;
     }
   } else {

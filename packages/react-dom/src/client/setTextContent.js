@@ -8,6 +8,7 @@
  */
 
 import {TEXT_NODE} from '../shared/HTMLNodeType';
+import trustedTypePolicy from './trustedTypesPolicy'
 
 /**
  * Set the textContent property of a node. For text updates, it's faster
@@ -31,7 +32,10 @@ let setTextContent = function(node: Element, text: string): void {
       return;
     }
   }
-  node.textContent = text;
+  // console.log('TT_TODO: if node is script, iframe...', node, text);
+  // we can trust that the script won't be executed on client
+  if (node.tagName === 'SCRIPT') node.textContent = trustedTypePolicy.createScript(text)
+  else node.textContent = text;
 };
 
 export default setTextContent;

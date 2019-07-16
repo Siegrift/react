@@ -13,6 +13,7 @@ import {registrationNameModules} from 'events/EventPluginRegistry';
 import warning from 'shared/warning';
 import {canUseDOM} from 'shared/ExecutionEnvironment';
 import warningWithoutStack from 'shared/warningWithoutStack';
+import trustedTypesPolicy from './trustedTypesPolicy';
 
 import {
   getValueForAttribute,
@@ -248,7 +249,8 @@ if (__DEV__) {
             (parent.namespaceURI: any),
             parent.tagName,
           );
-    testElement.innerHTML = html;
+    // Trusted because it's used to parse innerHTML only for comparison.
+    testElement.innerHTML = trustedTypesPolicy.createHTML(html);
     return testElement.innerHTML;
   };
 }
@@ -407,7 +409,8 @@ export function createElement(
       // Create the script via .innerHTML so its "parser-inserted" flag is
       // set to true and it does not execute
       const div = ownerDocument.createElement('div');
-      div.innerHTML = '<script><' + '/script>'; // eslint-disable-line
+      // Trusted because react makes sure this script won't be executed
+      div.innerHTML = trustedTypesPolicy.createHTML('<script><' + '/script>'); // eslint-disable-line
       // This is guaranteed to yield a script element.
       const firstChild = ((div.firstChild: any): HTMLScriptElement);
       domElement = div.removeChild(firstChild);
@@ -759,7 +762,9 @@ export function diffProperties(
       const lastHtml = lastProp ? lastProp[HTML] : undefined;
       if (nextHtml != null) {
         if (lastHtml !== nextHtml) {
-          (updatePayload = updatePayload || []).push(propKey, '' + nextHtml);
+          // '' + nextHtml causes TT to be casted to string (which causes violation when updating react tree)
+          // TT_TODO: can we just use nextHtml? Is it really the only place?
+          (updatePayload = updatePayload || []).push(propKey, nextHtml);
         }
       } else {
         // TODO: It might be too late to clear this if we have children

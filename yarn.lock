@@ -4973,6 +4973,11 @@ trim-right@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/trim-right/-/trim-right-1.0.1.tgz#cb2e1203067e0c8de1f614094b9fe45704ea6003"
 
+trusted-types@^1.0.6:
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/trusted-types/-/trusted-types-1.0.6.tgz#cd23ae5fa5b5a250f5a2d9afba670e3551e5c84a"
+  integrity sha512-9T8mTqtmL3hH9g6FiduE0zplGuEWa/4Jg3vVwUIpdgw9twQN5lon9cbSgJsb3moPsR/6ejqUvWYZa3oydcPuWQ==
+
 tryit@^1.0.1:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/tryit/-/tryit-1.0.3.tgz#393be730a9446fd1ead6da59a014308f36c289cb"

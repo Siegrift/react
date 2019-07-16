@@ -52,6 +52,11 @@ export function createMarkupForProperty(name: string, value: mixed): string {
   if (shouldRemoveAttribute(name, value, propertyInfo, false)) {
     return '';
   }
+
+  // TT_TODO: proper hadling of attributes
+  if (name === 'href' && value.constructor.name !== 'TrustedURL') throw new Error("Encountered untrusted url: " + value);
+  if (name === 'srcDoc' && value.constructor.name !== 'TrustedHTML') throw new Error("Encountered untrusted html: " + value);
+
   if (propertyInfo !== null) {
     const attributeName = propertyInfo.attributeName;
     const {type} = propertyInfo;
