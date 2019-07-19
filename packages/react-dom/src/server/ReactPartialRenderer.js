@@ -273,10 +273,20 @@ function shouldConstruct(Component) {
   return Component.prototype && Component.prototype.isReactComponent;
 }
 
-function getNonChildrenInnerMarkup(props) {
+function getNonChildrenInnerMarkup(props, optionalDeps) {
   const innerHTML = props.dangerouslySetInnerHTML;
   if (innerHTML != null) {
     if (innerHTML.__html != null) {
+      if (
+        optionalDeps &&
+        optionalDeps.TrustedTypes &&
+        optionalDeps.TrustedTypes.isHTML(innerHTML.__html) === false
+      ) {
+        throw new Error(
+          'dangerouslySetInnerHTML requires TrustedHTML! Received: ' +
+            innerHTML.__html,
+        );
+      }
       return innerHTML.__html;
     }
   } else {
@@ -349,6 +359,7 @@ function createOpenTagMarkup(
   namespace: string,
   makeStaticMarkup: boolean,
   isRootElement: boolean,
+  optionalDeps: ?OptionalDeps,
 ): string {
   let ret = '<' + tagVerbatim;
 
@@ -369,7 +380,12 @@ function createOpenTagMarkup(
         markup = createMarkupForCustomAttribute(propKey, propValue);
       }
     } else {
-      markup = createMarkupForProperty(propKey, propValue);
+      markup = createMarkupForProperty(
+        propKey,
+        propValue,
+        tagLowercase,
+        optionalDeps,
+      );
     }
     if (markup) {
       ret += ' ' + markup;
@@ -685,6 +701,10 @@ type FrameDev = Frame & {
   debugElementStack: Array<ReactElement>,
 };
 
+type OptionalDeps = {
+  TrustedTypes?: any,
+};
+
 class ReactDOMServerRenderer {
   threadID: ThreadID;
   stack: Array<Frame>;
@@ -693,6 +713,7 @@ class ReactDOMServerRenderer {
   currentSelectValue: any;
   previousWasTextNode: boolean;
   makeStaticMarkup: boolean;
+  optionalDeps: ?OptionalDeps;
   suspenseDepth: number;
 
   contextIndex: number;
@@ -700,7 +721,11 @@ class ReactDOMServerRenderer {
   contextValueStack: Array<any>;
   contextProviderStack: ?Array<ReactProvider<any>>; // DEV-only
 
-  constructor(children: mixed, makeStaticMarkup: boolean) {
+  constructor(
+    children: mixed,
+    makeStaticMarkup: boolean,
+    optionalDeps?: OptionalDeps,
+  ) {
     const flatChildren = flattenTopLevelChildren(children);
 
     const topFrame: Frame = {
@@ -722,6 +747,7 @@ class ReactDOMServerRenderer {
     this.currentSelectValue = null;
     this.previousWasTextNode = false;
     this.makeStaticMarkup = makeStaticMarkup;
+    this.optionalDeps = optionalDeps;
     this.suspenseDepth = 0;
 
     // Context (new API)
@@ -1467,6 +1493,7 @@ class ReactDOMServerRenderer {
       namespace,
       this.makeStaticMarkup,
       this.stack.length === 1,
+      this.optionalDeps,
     );
     let footer = '';
     if (omittedCloseTags.hasOwnProperty(tag)) {
@@ -1476,7 +1503,7 @@ class ReactDOMServerRenderer {
       footer = '</' + element.type + '>';
     }
     let children;
-    const innerMarkup = getNonChildrenInnerMarkup(props);
+    const innerMarkup = getNonChildrenInnerMarkup(props, this.optionalDeps);
     if (innerMarkup != null) {
       children = [];
       if (newlineEatingTags[tag] && innerMarkup.charAt(0) === '\n') {

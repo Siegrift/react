@@ -45,13 +45,36 @@ export function createMarkupForRoot(): string {
  * @param {*} value
  * @return {?string} Markup string, or null if the property was invalid.
  */
-export function createMarkupForProperty(name: string, value: mixed): string {
+export function createMarkupForProperty(
+  name: string,
+  value: mixed,
+  tagLowercase: string,
+  optionalDeps: ?any,
+): string {
   const propertyInfo = getPropertyInfo(name);
   if (name !== 'style' && shouldIgnoreAttribute(name, propertyInfo, false)) {
     return '';
   }
   if (shouldRemoveAttribute(name, value, propertyInfo, false)) {
     return '';
+  }
+  if (
+    optionalDeps &&
+    optionalDeps.TrustedTypes &&
+    optionalDeps.TrustedTypes.getPropertyType(tagLowercase, name)
+  ) {
+    const TT = optionalDeps.TrustedTypes;
+    const requiredTrustedType = TT.getPropertyType(tagLowercase, name);
+    if (
+      (requiredTrustedType === 'TrustedHTML' && !TT.isHTML(value)) ||
+      (requiredTrustedType === 'TrustedScriptURL' && !TT.isScriptURL(value)) ||
+      (requiredTrustedType === 'TrustedURL' && !TT.isURL(value)) ||
+      (requiredTrustedType === 'TrustedScript' && !TT.isScript(value))
+    ) {
+      throw new Error(
+        `${name} requires ${requiredTrustedType}! Received: ${(value: any)}`,
+      );
+    }
   }
   if (propertyInfo !== null) {
     const attributeName = propertyInfo.attributeName;
